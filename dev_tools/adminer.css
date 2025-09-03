@@ -311,3 +311,20 @@ th {
 #h1:hover {
   color: var(--bg0);
 }
+
+p#dbs label {
+  position: relative;
+  display: block;
+}
+
+p#dbs label select {
+  float: right;
+  margin-right: 0;
+  min-width: 120px;
+}
+
+p#dbs label::after {
+  content: "";
+  display: table;
+  clear: both;
+}
