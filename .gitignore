@@ -14,3 +14,7 @@ dev_tools/*
 
 # Always ignore .env
 .env
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
