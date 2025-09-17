@@ -40,7 +40,7 @@ services:
     postgres:
         container_name: dev_postgres
         image: pgvector/pgvector:pg17
-        profiles: ["database", "postgres", "all"]
+        profiles: ["database", "postgres", "git", "all"]
         restart: '${RESTART_POLICY:-always}'
         environment:
             POSTGRES_USER: '${POSTGRES_USER:-postgres}'
@@ -263,6 +263,30 @@ services:
             retries: 5
             start_period: 60s
 
+    gitea:
+        image: gitea/gitea:latest
+        container_name: gitea
+        profiles: ["git", "gitea","all"]
+        restart: '${RESTART_POLICY:-always}'
+        environment:
+            - USER_UID=1000
+            - USER_GID=1000
+            - GITEA__database__DB_TYPE=postgres
+            - GITEA__database__HOST=postgres:${POSTGRES_PORT:-5432}
+            - GITEA__database__NAME=${GITEA_DB_NAME:-gitea}
+            - GITEA__database__USER=${POSTGRES_USER:-postgres}
+            - GITEA__database__PASSWD=${POSTGRES_PASSWORD:-changeme}
+        ports:
+            - "${GITEA_PORT:-3080}:3000"
+            - "${GITEA_SSH_PORT:-2222}:22"
+        volumes:
+            - gitea_data:/data
+        networks:
+            - dev_tools
+        depends_on:
+            postgres:
+                condition: service_healthy
+
 networks:
     dev_tools:
         name: dev_tools
@@ -284,3 +308,4 @@ volumes:
     redisinsight_data:
     ollama_data:
     anythingllm_data:
+    gitea_data:
