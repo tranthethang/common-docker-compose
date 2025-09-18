@@ -6,7 +6,7 @@ This Docker Compose setup provides a comprehensive development environment with 
 
 ### Databases
 - **PostgreSQL 17 (pgvector)** - Primary relational database with vector search extension
-- **MySQL 8.4** - Alternative relational database
+- **MySQL 8.0** - Alternative relational database
 - **MongoDB 8.0** - NoSQL document database
 
 ### Caching & Memory
@@ -21,6 +21,11 @@ This Docker Compose setup provides a comprehensive development environment with 
 - **Mailpit** - Modern email testing tool with advanced features
 - **SonarQube LTS** - Code quality and security analysis
 - **Portainer CE LTS** - Container management UI
+- **MinIO** - S3 compatible object storage
+- **Gitea** - Self-hosted Git service
+- **Concourse** - CI/CD tool
+- **Ollama** - Run large language models locally
+- **AnythingLLM** - A private ChatGPT for your documents
 
 ## Quick Start
 
@@ -62,17 +67,20 @@ Services are organized into profiles for selective deployment:
 
 ### Category Profiles
 - **`database`** - All database services (postgres, mysql8, mongodb, adminer)
-- **`cache`** - Caching services (redis, memcached)
+- **`cache`** - Caching services (redis, memcached, redisinsight)
 - **`storage`** - Storage services (minio)
 - **`messaging`** - Message queue services (rabbitmq)
 - **`mail`** - Email testing services (mailpit)
 - **`analysis`** - Code analysis services (sonarqube)
 - **`management`** - Container management services (portainer)
+- **`git`** - Git services (gitea)
+- **`ci`** - CI/CD services (concourse)
+- **`ai`** - AI services (ollama, anythingllm)
 - **`all`** - All services (default when no profile specified)
 
 ### Individual Service Profiles
 Each service has its own profile for granular control:
-- `minio`, `portainer`, `postgres`, `adminer`, `mailpit`, `mysql`, `memcached`, `mongodb`, `rabbitmq`, `redis`, `sonarqube`
+- `minio`, `portainer`, `postgres`, `adminer`, `mailpit`, `mysql`, `memcached`, `mongodb`, `rabbitmq`, `redis`, `redisinsight`, `sonarqube`, `gitea`, `concourse`, `ollama`, `anythingllm`
 
 ### Profile Usage Examples
 ```bash
@@ -159,6 +167,10 @@ Copy `.env.example` to `.env` and customize the following variables:
 - **SonarQube**: http://localhost:9090 - Code quality analysis
   - Default credentials: `admin/admin`
   - ⚠️ **Important**: Change the default password after first login
+- **RedisInsight**: http://localhost:5540 - Redis GUI
+- **Gitea**: http://localhost:3080 - Git service
+- **Concourse**: http://localhost:6080 - CI/CD
+- **AnythingLLM**: http://localhost:3030 - Private ChatGPT
 
 ### Database Connections
 - **PostgreSQL**: `localhost:5432`
@@ -179,6 +191,8 @@ All critical services include health checks:
 - **RabbitMQ**: `rabbitmq-diagnostics check_running`
 - **Redis**: `redis-cli ping`
 - **SonarQube**: HTTP status check on `/api/system/status`
+- **MinIO**: HTTP status check on `/minio/health/live`
+- **Ollama**: `ollama list` command
 
 ## Data Persistence
 
@@ -193,6 +207,12 @@ The following volumes are created for data persistence:
 - `sonarqube_extensions` - SonarQube extensions
 - `sonarqube_logs` - SonarQube logs
 - `sonarqube_temp` - SonarQube temporary files
+- `portainer_data` - Portainer data
+- `minio_data` - MinIO data
+- `redisinsight_data` - RedisInsight data
+- `ollama_data` - Ollama data
+- `anythingllm_data` - AnythingLLM data
+- `gitea_data` - Gitea data
 
 ## Common Commands
 
@@ -330,7 +350,7 @@ docker compose up -d
 - Docker Engine 20.10+
 - Docker Compose 2.0+
 - At least 4GB RAM (recommended 8GB for SonarQube)
-- Available ports: 5432, 3306, 27017, 6379, 11211, 5672, 15672, 8048, 8025, 1025, 9090, 9009, 9001, 9443
+- Available ports: 5432, 3306, 27017, 6379, 11211, 5672, 15672, 8048, 8025, 1025, 9090, 9009, 9001, 9443, 5540, 3080, 2222, 6080, 11434, 3030
 
 ## Contributing
 

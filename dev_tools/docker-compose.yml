@@ -40,7 +40,7 @@ services:
     postgres:
         container_name: dev_postgres
         image: pgvector/pgvector:pg17
-        profiles: ["database", "postgres", "git", "all"]
+        profiles: ["database", "postgres", "git", "ci", "all"]
         restart: '${RESTART_POLICY:-always}'
         environment:
             POSTGRES_USER: '${POSTGRES_USER:-postgres}'
@@ -286,6 +286,29 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
+
+    concourse:
+        image: concourse/concourse
+        restart: '${RESTART_POLICY:-always}'
+        command: quickstart
+        privileged: true
+        profiles: ["concourse", "ci","all"]
+        depends_on:
+            postgres:
+                condition: service_healthy
+        ports:
+            - "${CONCOURSE_WEB_PORT:-6080}:8080"
+        environment:
+            CONCOURSE_POSTGRES_HOST: '${POSTGRES_HOST:-postgres}'
+            CONCOURSE_POSTGRES_USER: '${POSTGRES_USER:-postgres}'
+            CONCOURSE_POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-changeme}'
+            CONCOURSE_POSTGRES_DATABASE: '${CONCOURSE_DB_NAME:-concourse}'
+            CONCOURSE_EXTERNAL_URL: '${CONCOURSE_EXTERNAL_URL:-http://localhost:6080}'
+            CONCOURSE_ADD_LOCAL_USER: '${CONCOURSE_ADD_LOCAL_USER:-admin:admin}'
+            CONCOURSE_MAIN_TEAM_LOCAL_USER: '${CONCOURSE_MAIN_TEAM_LOCAL_USER:-admin}'
+            CONCOURSE_WORKER_GARDEN_NETWORK: '${CONCOURSE_WORKER_GARDEN_NETWORK:-dev_tools}'
+        networks:
+            - dev_tools
 
 networks:
     dev_tools:
