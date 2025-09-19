@@ -8,8 +8,11 @@ services:
             - "--providers.docker=true"
             - "--providers.docker.exposedbydefault=false"
             - "--entrypoints.web.address=:80"
+            - "--entrypoints.websecure.address=:443"
+            - "--serversTransport.insecureSkipVerify=true"
         ports:
             - "80:80"
+            - "443:443"
             - "8080:8080"
         volumes:
             - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -47,8 +50,17 @@ services:
         profiles: ["management", "portainer", "all"]
         labels:
             - "traefik.enable=true"
-            - "traefik.http.routers.portainer.rule=Host(`${PORTAINER_HOST:-portainer.localhost}`)"
+            - "traefik.http.routers.portainer-http.rule=Host(`${PORTAINER_HOST:-portainer.localhost}`)"
+            - "traefik.http.routers.portainer-http.entrypoints=web"
+            - "traefik.http.routers.portainer-http.middlewares=portainer-https-redirect"
+            - "traefik.http.middlewares.portainer-https-redirect.redirectscheme.scheme=https"
+            - "traefik.http.routers.portainer-http.service=portainer"
+            - "traefik.http.routers.portainer-https.rule=Host(`${PORTAINER_HOST:-portainer.localhost}`)"
+            - "traefik.http.routers.portainer-https.entrypoints=websecure"
+            - "traefik.http.routers.portainer-https.tls=true"
+            - "traefik.http.routers.portainer-https.service=portainer"
             - "traefik.http.services.portainer.loadbalancer.server.port=9443"
+            - "traefik.http.services.portainer.loadbalancer.server.scheme=https"
         volumes:
             - portainer_data:/data
             - /var/run/docker.sock:/var/run/docker.sock
