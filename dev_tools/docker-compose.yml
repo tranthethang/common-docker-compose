@@ -1,12 +1,29 @@
 services:
+    traefik:
+        image: "traefik:v3.0"
+        container_name: "traefik"
+        profiles: ["proxy", "traefik", "all"]
+        command:
+            - "--api.insecure=true"
+            - "--providers.docker=true"
+            - "--providers.docker.exposedbydefault=false"
+            - "--entrypoints.web.address=:80"
+        ports:
+            - "80:80"
+            - "8080:8080"
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock:ro"
+        networks:
+            - dev_tools
 
     minio:
         container_name: dev_minio
         image: bitnami/minio:latest
         profiles: ["storage", "minio", "all"]
-        ports:
-            - '${MINIO_API_PORT:-9009}:9000'
-            - '${MINIO_CONSOLE_PORT:-9001}:9001'
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.minio.rule=Host(`${MINIO_HOST:-minio.localhost}`)"
+            - "traefik.http.services.minio.loadbalancer.server.port=9000"
         environment:
             - MINIO_ROOT_USER=${MINIO_ROOT_USER:-admin}
             - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-password102}
@@ -28,8 +45,10 @@ services:
         image: portainer/portainer-ce:lts
         container_name: dev_portainer
         profiles: ["management", "portainer", "all"]
-        ports:
-            - '${PORTAINER_PORT:-9443}:9443'
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.portainer.rule=Host(`${PORTAINER_HOST:-portainer.localhost}`)"
+            - "traefik.http.services.portainer.loadbalancer.server.port=9443"
         volumes:
             - portainer_data:/data
             - /var/run/docker.sock:/var/run/docker.sock
@@ -63,8 +82,10 @@ services:
         image: adminer:5
         profiles: ["database", "adminer", "all"]
         restart: '${RESTART_POLICY:-always}'
-        ports:
-            - '${ADMINER_PORT:-8048}:8080'
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.adminer.rule=Host(`${ADMINER_HOST:-adminer.localhost}`)"
+            - "traefik.http.services.adminer.loadbalancer.server.port=8080"
         networks:
             - dev_tools
         depends_on:
@@ -80,8 +101,11 @@ services:
         image: axllent/mailpit:latest
         profiles: ["mail", "mailpit", "all"]
         restart: '${RESTART_POLICY:-always}'
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.mailpit.rule=Host(`${MAILPIT_HOST:-mailpit.localhost}`)"
+            - "traefik.http.services.mailpit.loadbalancer.server.port=8025"
         ports:
-            - '${MAILPIT_WEB_PORT:-8025}:8025'
             - '${MAILPIT_SMTP_PORT:-1025}:1025'
         networks:
             - dev_tools
@@ -148,9 +172,12 @@ services:
         environment:
             RABBITMQ_DEFAULT_USER: '${RABBITMQ_USER:-guest}'
             RABBITMQ_DEFAULT_PASS: '${RABBITMQ_PASSWORD:-guest}'
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.rabbitmq.rule=Host(`${RABBITMQ_HOST:-rabbitmq.localhost}`)"
+            - "traefik.http.services.rabbitmq.loadbalancer.server.port=15672"
         ports:
             - '${RABBITMQ_PORT:-5672}:5672'
-            - '${RABBITMQ_WEB_PORT:-15672}:15672'
         networks:
             - dev_tools
         volumes:
@@ -187,8 +214,10 @@ services:
         image: 'redis/redisinsight:latest'
         profiles: ["cache", "redisinsight", "all"]
         restart: '${RESTART_POLICY:-always}'
-        ports:
-            - '${REDISINSIGHT_PORT:-5540}:5540'
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.redisinsight.rule=Host(`${REDISINSIGHT_HOST:-redisinsight.localhost}`)"
+            - "traefik.http.services.redisinsight.loadbalancer.server.port=5540"
         networks:
             - dev_tools
         volumes:
@@ -224,8 +253,10 @@ services:
             - STORAGE_DIR=${ANYTHINGLLM_STORAGE_DIR:-/app/server/storage}
             - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
             - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme}@postgres:${POSTGRES_PORT:-5432}/${ANYTHINGLLM_DB_NAME:-anythingllm}
-        ports:
-            - '${ANYTHINGLLM_PORT:-3030}:3001'
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.anythingllm.rule=Host(`${ANYTHINGLLM_HOST:-anythingllm.localhost}`)"
+            - "traefik.http.services.anythingllm.loadbalancer.server.port=3001"
         networks:
             - dev_tools
         volumes:
@@ -246,8 +277,10 @@ services:
             SONAR_JDBC_USERNAME: '${POSTGRES_USER:-postgres}'
             SONAR_JDBC_PASSWORD: '${POSTGRES_PASSWORD:-changeme}'
         restart: '${RESTART_POLICY:-always}'
-        ports:
-            - '${SONARQUBE_PORT:-9090}:9000'
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.sonarqube.rule=Host(`${SONARQUBE_HOST:-sonarqube.localhost}`)"
+            - "traefik.http.services.sonarqube.loadbalancer.server.port=9000"
         networks:
             - dev_tools
         volumes:
@@ -276,8 +309,11 @@ services:
             - GITEA__database__NAME=${GITEA_DB_NAME:-gitea}
             - GITEA__database__USER=${POSTGRES_USER:-postgres}
             - GITEA__database__PASSWD=${POSTGRES_PASSWORD:-changeme}
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.gitea.rule=Host(`${GITEA_HOST:-gitea.localhost}`)"
+            - "traefik.http.services.gitea.loadbalancer.server.port=3000"
         ports:
-            - "${GITEA_PORT:-3080}:3000"
             - "${GITEA_SSH_PORT:-2222}:22"
         volumes:
             - gitea_data:/data
@@ -296,14 +332,16 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
-        ports:
-            - "${CONCOURSE_WEB_PORT:-6080}:8080"
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.concourse.rule=Host(`${CONCOURSE_HOST:-concourse.localhost}`)"
+            - "traefik.http.services.concourse.loadbalancer.server.port=8080"
         environment:
             CONCOURSE_POSTGRES_HOST: '${POSTGRES_HOST:-postgres}'
             CONCOURSE_POSTGRES_USER: '${POSTGRES_USER:-postgres}'
             CONCOURSE_POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-changeme}'
             CONCOURSE_POSTGRES_DATABASE: '${CONCOURSE_DB_NAME:-concourse}'
-            CONCOURSE_EXTERNAL_URL: '${CONCOURSE_EXTERNAL_URL:-http://localhost:6080}'
+            CONCOURSE_EXTERNAL_URL: 'http://${CONCOURSE_HOST:-concourse.localhost}'
             CONCOURSE_ADD_LOCAL_USER: '${CONCOURSE_ADD_LOCAL_USER:-admin:admin}'
             CONCOURSE_MAIN_TEAM_LOCAL_USER: '${CONCOURSE_MAIN_TEAM_LOCAL_USER:-admin}'
             CONCOURSE_WORKER_GARDEN_NETWORK: '${CONCOURSE_WORKER_GARDEN_NETWORK:-dev_tools}'
